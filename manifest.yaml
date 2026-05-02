@@ -1,0 +1,19 @@
+version: 0.0.2
+type: plugin
+author: jaiken
+name: feishu-bitable-auth
+label:
+  en_US: Feishu Bitable Auth
+  zh_Hans: 飞书多维表格鉴权
+description:
+  en_US: Authenticate users via Feishu Bitable employee records
+  zh_Hans: 通过飞书多维表格员工记录进行用户权限验证
+icon: icon.svg
+resource:
+  memory: 256
+  permission:
+    tool:
+      enabled: true
+plugins:
+  tools:
+    - tools/auth_check.yaml

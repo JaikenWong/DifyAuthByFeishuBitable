@@ -1,0 +1,105 @@
+identity:
+  name: auth_check
+  author: jaiken
+  label:
+    en_US: Auth Check
+    zh_Hans: 权限检查
+description:
+  human:
+    en_US: Check user permission via Feishu Bitable. Returns authorized status and permission value for downstream branch nodes.
+    zh_Hans: 通过飞书多维表格检查用户权限，返回鉴权状态和权限值供下游分支节点使用。
+  llm: Check if a user has permission by looking up their record in a Feishu Bitable table.
+parameters:
+  - name: user_id
+    type: string
+    required: true
+    label:
+      en_US: User ID
+      zh_Hans: 用户 ID
+    human_description:
+      en_US: User identifier to check (use sys.user_id or a user input variable)
+      zh_Hans: 待鉴权的用户标识（使用 sys.user_id 或用户输入变量）
+    llm_description: The user identifier to look up in the Feishu table.
+    form: llm
+  - name: app_token
+    type: string
+    required: true
+    label:
+      en_US: Bitable App Token
+      zh_Hans: 多维表格 App Token
+    human_description:
+      en_US: The app token of the Feishu Bitable (from the table URL)
+      zh_Hans: 飞书多维表格的 App Token（从表格链接中获取）
+    llm_description: Feishu Bitable app token.
+    form: form
+  - name: table_id
+    type: string
+    required: true
+    label:
+      en_US: Table ID
+      zh_Hans: 数据表 ID
+    human_description:
+      en_US: The ID of the specific table within the Bitable
+      zh_Hans: 多维表格中具体数据表的 ID
+    llm_description: Feishu Bitable table ID.
+    form: form
+  - name: view_id
+    type: string
+    required: false
+    label:
+      en_US: View ID
+      zh_Hans: 视图 ID
+    human_description:
+      en_US: Optional view ID to filter records
+      zh_Hans: 可选，限定查询范围的视图 ID
+    llm_description: Optional Feishu Bitable view ID.
+    form: form
+  - name: employee_col
+    type: string
+    required: true
+    label:
+      en_US: Employee Column Name
+      zh_Hans: 工号列名
+    human_description:
+      en_US: Column name used to match user ID (e.g. 工号)
+      zh_Hans: 用于匹配用户 ID 的列名（如：工号）
+    llm_description: Column name to match against user_id.
+    form: form
+  - name: permission_col
+    type: string
+    required: false
+    label:
+      en_US: Permission Column Name
+      zh_Hans: 权限列名
+    human_description:
+      en_US: Optional column whose value is returned as permission_value for branch logic
+      zh_Hans: 可选，其值作为 permission_value 输出供分支判断
+    llm_description: Optional column name whose value represents the user's permission level.
+    form: form
+  - name: default_denied_msg
+    type: string
+    required: false
+    label:
+      en_US: Denied Message
+      zh_Hans: 无权限提示语
+    human_description:
+      en_US: Message returned when user is not found in the table
+      zh_Hans: 用户不在表格中时返回的提示语
+    llm_description: Message to return when user is not authorized.
+    form: form
+output:
+  - name: authorized
+    type: boolean
+    label:
+      en_US: Authorized
+      zh_Hans: 是否有权限
+  - name: permission_value
+    type: string
+    label:
+      en_US: Permission Value
+      zh_Hans: 权限值
+  - name: message
+    type: string
+    label:
+      en_US: Message
+      zh_Hans: 结果消息

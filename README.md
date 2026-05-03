@@ -5,8 +5,9 @@
 ## 功能
 
 - 用 `sys.user_id`（或任意输入变量）匹配多维表格中的工号列
-- 返回 `authorized`（是否有权限）、`permission_value`（权限列的值）、`message`（结果提示）
-- 支持下游分支节点根据权限值进行多级路由
+- 返回 `result`（yes/no）、`permission_value`（权限列值）、`message`（结果描述）
+- 每个工具节点独立配置飞书应用凭证，支持多应用场景
+- 支持下游 IF/ELSE 条件分支节点根据权限值进行多级路由
 
 ---
 
@@ -36,17 +37,9 @@ https://your-company.feishu.cn/base/BascXXXXXXXX?table=tblXXXXXXXX&view=vewXXXXX
 
 ## 安装插件
 
-### 方式一：打包上传（推荐生产环境）
+### 方式一：上传插件包
 
-```bash
-# 安装 dify-plugin-daemon CLI
-pip install dify-plugin
-
-# 打包
-dify-plugin package ./dify-file-plugin
-
-# 在 Dify 控制台 → 插件 → 上传插件包 (.difypkg)
-```
+下载最新 [.difypkg](https://github.com/JaikenWong/DifyAuthByFeishuBitable/releases) 发布包，在 Dify 控制台 → 插件 → 上传插件包。
 
 ### 方式二：远程调试（开发环境）
 
@@ -61,17 +54,6 @@ python -m main
 
 ---
 
-## 配置凭证
-
-Dify 控制台 → 插件 → 飞书多维表格鉴权 → 授权：
-
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| App ID | ✅ | 飞书自建应用的 App ID，格式：`cli_xxxxxxxxxxxxxxxx` |
-| App Secret | ✅ | 飞书自建应用的 App Secret |
-
----
-
 ## 在 Chatflow 中使用
 
 ### 推荐流程
@@ -81,33 +63,40 @@ Dify 控制台 → 插件 → 飞书多维表格鉴权 → 授权：
     ↓
 [工具节点: Auth Check]
     ↓
-[条件分支]
-  ├─ authorized == true ──→ [正常业务节点]
-  │                              ↓
-  │                    （可再按 permission_value 分支）
-  └─ authorized == false ─→ [直接回复节点]
-                               输出: {{#auth_check.message#}}
+[IF/ELSE 条件分支]
+  ├─ result == yes ──→ [正常业务节点]
+  │                        ↓
+  │              （可再按 permission_value 分支）
+  └─ ELSE ──→ [直接回复: 无权限提示]
 ```
 
 ### 工具节点参数配置
 
 | 参数 | 必填 | 说明 | 示例 |
 |------|------|------|------|
+| `app_id` | ✅ | 飞书自建应用 App ID | `cli_a96937074338dbc6` |
+| `app_secret` | ✅ | 飞书自建应用 App Secret | |
 | `user_id` | ✅ | 用户标识，映射 `sys.user_id` 或用户输入变量 | `{{#sys.user_id#}}` |
 | `app_token` | ✅ | 多维表格 App Token | `BascXXXXXXXX` |
 | `table_id` | ✅ | 数据表 ID | `tblXXXXXXXX` |
 | `view_id` | ❌ | 视图 ID，可缩小查询范围 | `vewXXXXXXXX` |
 | `employee_col` | ✅ | 用于匹配 user_id 的列名 | `工号` |
 | `permission_col` | ❌ | 权限列名，其值输出到 `permission_value` | `角色` |
-| `default_denied_msg` | ❌ | 无权限时的提示语，默认"无权限访问" | `您无权使用此功能` |
 
 ### 输出变量
 
 | 变量 | 类型 | 说明 |
 |------|------|------|
-| `authorized` | boolean | `true` 表示用户在表格中存在 |
+| `result` | string | `"yes"` 表示有权限，`"no"` 表示无权限 |
 | `permission_value` | string | `permission_col` 列的值，可用于多级权限分支 |
-| `message` | string | 鉴权结果描述，无权限时为 `default_denied_msg` 的值 |
+| `message` | string | 鉴权结果描述 |
+
+### 条件分支配置示例
+
+IF/ELSE 节点：
+- **条件**：`auth_check.result` `等于` `yes`
+- **IF 分支**：有权限，继续正常业务流程
+- **ELSE 分支**：无权限，直接回复拒绝提示
 
 ---
 
@@ -116,7 +105,7 @@ Dify 控制台 → 插件 → 飞书多维表格鉴权 → 授权：
 ### 场景一：仅判断有无权限
 
 - `permission_col` 留空
-- 分支条件：`authorized == true`
+- 分支条件：`result == yes`
 
 ### 场景二：按角色分流
 
@@ -125,7 +114,7 @@ Dify 控制台 → 插件 → 飞书多维表格鉴权 → 授权：
 - `permission_col` = `角色`
 - 分支1：`permission_value == admin` → 高权限流程
 - 分支2：`permission_value == user` → 普通流程
-- 分支3：`authorized == false` → 拒绝
+- 分支3：`result == no` → 拒绝
 
 ### 场景三：user_id 来自用户输入
 
@@ -146,14 +135,14 @@ Dify 控制台 → 插件 → 飞书多维表格鉴权 → 授权：
 
 ## 常见问题
 
-**Q: `authorized` 始终为 false？**
+**Q: result 始终为 no？**
 检查：① 应用是否已加入多维表格并有读权限 ② `employee_col` 列名是否与表格完全一致（区分全半角）③ `sys.user_id` 的值格式是否与表格中一致
 
-**Q: `permission_value` 为空？**
+**Q: permission_value 为空？**
 `permission_col` 未填写，或该用户对应行的权限列为空值，均正常。
 
-**Q: 飞书 API 报错 99991663？**
-应用未开通多维表格读权限，或未发布上线。
+**Q: 飞书 API 报错 99991661？**
+App ID 或 App Secret 配置错误，检查工具节点中的凭证是否正确。
 
-**Q: 飞书 API 报错 1254002？**
-应用未被添加到该多维表格的协作者列表。
+**Q: 飞书 API 报错 99991672？**
+应用未开通多维表格读权限（`bitable:app` / `bitable:app:readonly` / `base:record:retrieve`），或未发布上线。

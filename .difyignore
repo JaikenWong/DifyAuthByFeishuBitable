@@ -1,0 +1,13 @@
+.git/
+.claude/
+AGENTS.md
+.env
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+*.difypkg
+.DS_Store
+.venv/
+venv/

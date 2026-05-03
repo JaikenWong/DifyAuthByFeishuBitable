@@ -1,6 +1,7 @@
 identity:
   name: auth_check
   author: jaiken
+  icon: icon.svg
   label:
     en_US: Auth Check
     zh_Hans: 权限检查
@@ -10,6 +11,28 @@ description:
     zh_Hans: 通过飞书多维表格检查用户权限，返回鉴权状态和权限值供下游分支节点使用。
   llm: Check if a user has permission by looking up their record in a Feishu Bitable table.
 parameters:
+  - name: app_id
+    type: string
+    required: true
+    label:
+      en_US: App ID
+      zh_Hans: 飞书应用 App ID
+    human_description:
+      en_US: Feishu App ID for this instance
+      zh_Hans: 当前实例的飞书应用 App ID
+    llm_description: Feishu App ID.
+    form: form
+  - name: app_secret
+    type: string
+    required: true
+    label:
+      en_US: App Secret
+      zh_Hans: 飞书应用 App Secret
+    human_description:
+      en_US: Feishu App Secret for this instance
+      zh_Hans: 当前实例的飞书应用 App Secret
+    llm_description: Feishu App Secret.
+    form: form
   - name: user_id
     type: string
     required: true
@@ -76,23 +99,12 @@ parameters:
       zh_Hans: 可选，其值作为 permission_value 输出供分支判断
     llm_description: Optional column name whose value represents the user's permission level.
     form: form
-  - name: default_denied_msg
-    type: string
-    required: false
-    label:
-      en_US: Denied Message
-      zh_Hans: 无权限提示语
-    human_description:
-      en_US: Message returned when user is not found in the table
-      zh_Hans: 用户不在表格中时返回的提示语
-    llm_description: Message to return when user is not authorized.
-    form: form
 output:
-  - name: authorized
-    type: boolean
+  - name: result
+    type: string
     label:
-      en_US: Authorized
-      zh_Hans: 是否有权限
+      en_US: Result (yes/no)
+      zh_Hans: 鉴权结果 (yes/no)
   - name: permission_value
     type: string
     label:
@@ -103,3 +115,6 @@ output:
     label:
       en_US: Message
       zh_Hans: 结果消息
+extra:
+  python:
+    source: tools/auth_check.py

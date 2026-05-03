@@ -8,22 +8,8 @@ identity:
     en_US: Authenticate users via Feishu Bitable records
     zh_Hans: 通过飞书多维表格记录进行权限验证
   icon: icon.svg
-credentials_for_provider:
-  app_id:
-    type: text-input
-    required: true
-    label:
-      en_US: App ID
-      zh_Hans: 飞书应用 App ID
-    placeholder:
-      en_US: cli_xxxxxxxxxxxxxxxx
-      zh_Hans: cli_xxxxxxxxxxxxxxxx
-  app_secret:
-    type: secret-input
-    required: true
-    label:
-      en_US: App Secret
-      zh_Hans: 飞书应用 App Secret
-    placeholder:
-      en_US: Enter App Secret
-      zh_Hans: 输入 App Secret
+tools:
+  - tools/auth_check.yaml
+extra:
+  python:
+    source: provider/feishu_auth.py

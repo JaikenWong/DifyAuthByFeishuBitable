@@ -42,23 +42,22 @@ def _extract_field_text(value: Any) -> str:
 
 class AuthCheckTool(Tool):
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage, None, None]:
-        credentials = self.runtime.credentials
-        app_id = credentials["app_id"]
-        app_secret = credentials["app_secret"]
+        app_id = tool_parameters["app_id"]
+        app_secret = tool_parameters["app_secret"]
 
         app_token = tool_parameters["app_token"]
         table_id = tool_parameters["table_id"]
         view_id = tool_parameters.get("view_id") or ""
         employee_col = tool_parameters["employee_col"]
         permission_col = tool_parameters.get("permission_col") or ""
-        default_denied_msg = tool_parameters.get("default_denied_msg") or "无权限访问"
         user_id = tool_parameters["user_id"]
 
         try:
             access_token = _get_tenant_access_token(app_id, app_secret)
         except (RuntimeError, requests.RequestException) as e:
+            yield self.create_text_message(f"no")
             yield self.create_json_message({
-                "authorized": False,
+                "result": "no",
                 "permission_value": "",
                 "message": f"Auth service error: {e}",
             })
@@ -80,7 +79,7 @@ class AuthCheckTool(Tool):
                     }
                 ],
             },
-            "page_size": 2,  # fetch 2 to detect duplicates
+            "page_size": 2,
         }
         if view_id:
             search_body["view_id"] = view_id
@@ -95,16 +94,18 @@ class AuthCheckTool(Tool):
             resp.raise_for_status()
             data = resp.json()
         except requests.RequestException as e:
+            yield self.create_text_message(f"no")
             yield self.create_json_message({
-                "authorized": False,
+                "result": "no",
                 "permission_value": "",
                 "message": f"Bitable query failed: {e}",
             })
             return
 
         if data.get("code") != 0:
+            yield self.create_text_message(f"no")
             yield self.create_json_message({
-                "authorized": False,
+                "result": "no",
                 "permission_value": "",
                 "message": f"Bitable error: {data.get('msg', 'unknown error')} (code={data.get('code')})",
             })
@@ -113,16 +114,18 @@ class AuthCheckTool(Tool):
         items = data.get("data", {}).get("items", [])
 
         if not items:
+            yield self.create_text_message(f"no")
             yield self.create_json_message({
-                "authorized": False,
+                "result": "no",
                 "permission_value": "",
-                "message": default_denied_msg,
+                "message": "Unauthorized",
             })
             return
 
         if len(items) > 1:
+            yield self.create_text_message(f"no")
             yield self.create_json_message({
-                "authorized": False,
+                "result": "no",
                 "permission_value": "",
                 "message": f"Duplicate user records found for '{user_id}', contact admin.",
             })
@@ -134,10 +137,10 @@ class AuthCheckTool(Tool):
         if permission_col:
             if permission_col in fields:
                 permission_value = _extract_field_text(fields[permission_col])
-            # permission_col configured but field missing from record → empty string, still authorized
 
+        yield self.create_text_message(f"yes")
         yield self.create_json_message({
-            "authorized": True,
+            "result": "yes",
             "permission_value": permission_value,
             "message": "Authorization passed",
         })
